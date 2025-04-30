@@ -1,0 +1,324 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "Statistics": {
+            "properties": {
+                "count_100": {
+                    "type": "integer"
+                },
+                "count_300": {
+                    "type": "integer"
+                },
+                "count_50": {
+                    "type": "integer"
+                },
+                "count_miss": {
+                    "type": "integer"
+                },
+                "global_rank": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "global_rank_exp": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "grade_counts": {
+                    "properties": {
+                        "a": {
+                            "type": "integer"
+                        },
+                        "s": {
+                            "type": "integer"
+                        },
+                        "sh": {
+                            "type": "integer"
+                        },
+                        "ss": {
+                            "type": "integer"
+                        },
+                        "ssh": {
+                            "type": "integer"
+                        }
+                    },
+                    "type": "object"
+                },
+                "hit_accuracy": {
+                    "type": "integer"
+                },
+                "is_ranked": {
+                    "type": "boolean"
+                },
+                "level": {
+                    "properties": {
+                        "current": {
+                            "type": "integer"
+                        },
+                        "progress": {
+                            "type": "integer"
+                        }
+                    },
+                    "type": "object"
+                },
+                "maximum_combo": {
+                    "type": "integer"
+                },
+                "play_count": {
+                    "type": "integer"
+                },
+                "play_time": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "pp": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "pp_exp": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
+                "ranked_score": {
+                    "type": "integer"
+                },
+                "replays_watched_by_others": {
+                    "type": "integer"
+                },
+                "total_hits": {
+                    "type": "integer"
+                },
+                "total_score": {
+                    "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "User": {
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "country": {
+                    "properties": {
+                        "code": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "cover": {
+                    "properties": {
+                        "custom_url": {
+                            "type": [
+                                "null",
+                                "string"
+                            ]
+                        },
+                        "id": {
+                            "type": [
+                                "null",
+                                "integer"
+                            ]
+                        },
+                        "url": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "default_group": {
+                    "type": "string"
+                },
+                "groups": {
+                    "items": {
+                        "properties": {
+                            "colour": {
+                                "type": [
+                                    "null",
+                                    "string"
+                                ]
+                            },
+                            "has_listing": {
+                                "type": "boolean"
+                            },
+                            "has_playmodes": {
+                                "type": "boolean"
+                            },
+                            "id": {
+                                "type": "integer"
+                            },
+                            "identifier": {
+                                "type": "string"
+                            },
+                            "is_probationary": {
+                                "type": "boolean"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "playmodes": {
+                                "anyOf": [
+                                    {
+                                        "items": {
+                                            "enum": [
+                                                "fruits",
+                                                "mania",
+                                                "osu",
+                                                "taiko"
+                                            ],
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "short_name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_bot": {
+                    "type": "boolean"
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "is_online": {
+                    "type": "boolean"
+                },
+                "is_supporter": {
+                    "type": "boolean"
+                },
+                "last_visit": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "pm_friends_only": {
+                    "type": "boolean"
+                },
+                "profile_colour": {
+                    "type": [
+                        "null",
+                        "string"
+                    ]
+                },
+                "statistics_rulesets": {
+                    "properties": {
+                        "fruits": {
+                            "$ref": "#/definitions/Statistics"
+                        },
+                        "mania": {
+                            "$ref": "#/definitions/Statistics"
+                        },
+                        "osu": {
+                            "$ref": "#/definitions/Statistics"
+                        },
+                        "taiko": {
+                            "$ref": "#/definitions/Statistics"
+                        }
+                    },
+                    "type": "object"
+                },
+                "team": {
+                    "anyOf": [
+                        {
+                            "properties": {
+                                "flag_url": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "short_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "username": {
+                    "type": "string"
+                },
+                "variants": {
+                    "items": {
+                        "properties": {
+                            "country_rank": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "global_rank": {
+                                "type": [
+                                    "null",
+                                    "integer"
+                                ]
+                            },
+                            "mode": {
+                                "enum": [
+                                    "fruits",
+                                    "mania",
+                                    "osu",
+                                    "taiko"
+                                ],
+                                "type": "string"
+                            },
+                            "pp": {
+                                "type": "integer"
+                            },
+                            "variant": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    }
+}
+
