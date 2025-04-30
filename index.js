@@ -92,20 +92,20 @@ function preprocess(schema) {
 }
 
 function collapse(schema) {
-	function collapseRecursive(obj, path, propagate) {
+	function collapseRecursive(obj, propagate) {
 		let result = {};
 
 		Object.entries(obj.properties || {}).forEach(([key, val]) => {
 			if (val.type === "object" && val.properties && propagate && !val.table) {
-				let nested = collapseRecursive(val, path.concat(key), true);
+				let nested = collapseRecursive(val, true);
 				Object.entries(nested).forEach(([nestedKey, nestedVal]) => {
 					result[`${key}_${nestedKey}`] = nestedVal;
 				});
 			} else if (val.type === "array" && val.items && val.items.type === "object" && val.items.properties) {
-				collapseRecursive(val.items, path.concat(key), false);
+				collapseRecursive(val.items, false);
 				result[key] = val;
 			} else if (val.type === "object" && val.properties && val.table) {
-				collapseRecursive(val, path.concat(key), false);
+				collapseRecursive(val, false);
 				result[key] = val;
 			} else {
 				result[key] = val;
@@ -132,15 +132,32 @@ function capitalize(str) {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function generateTables(tables, rawName, schema, ref = null) {
-	const name = capitalize(rawName);
-	if (tables[name]) return;
+function decapitalize(str) {
+	return str.charAt(0).toLowerCase() + str.slice(1);
+}
+
+function generateTables(tables, name, schema, ref = null) {
+	const toAdd = [];
+	if (tables[capitalize(name)]) return;
 	const columns = [];
 	Object.entries(schema.properties || {}).forEach(([key, val]) => {
 		if (val.table === true) {
 			if (val["$ref"]) {
+				toAdd.push(() => {
+					const refName = val["$ref"].split("/").pop();
+					if (!tables[refName]) {
+						console.log("Impossible case reached", refName);
+						return;
+					}
+					if (tables[refName].some((col) => col.name === "key")) return;
+					tables[refName].push({
+						name: "key",
+						type: "string",
+						nullable: false,
+					});
+				});
 			} else {
-				generateTables(tables, key, val.type === "array" ? val.items : val, name);
+				toAdd.push(...generateTables(tables, key, val.type === "array" ? val.items : val, name));
 			}
 			return;
 		}
@@ -171,19 +188,23 @@ function generateTables(tables, rawName, schema, ref = null) {
 			nullable: false,
 		});
 	}
-	tables[name] = columns;
+	tables[capitalize(name)] = columns;
+	return toAdd;
 }
 
 function convertSchema(root) {
+	const toAdd = [];
 	const tables = {};
 	Object.entries(root.definitions).forEach(([name, schema]) => {
 		preprocess(schema);
 		collapse(schema);
 		strip(schema);
-		// console.log(JSON.stringify(schema, null, 4));
-		generateTables(tables, name, schema);
+		console.log(JSON.stringify(schema, null, 4));
+		toAdd.push(...generateTables(tables, decapitalize(name), schema));
 	});
-
+	toAdd.forEach((fn) => {
+		fn();
+	});
 	return tables;
 }
 
