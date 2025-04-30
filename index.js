@@ -44,12 +44,12 @@ function preprocess(schema) {
 					})
 				);
 			schema.table = Object.keys(schema.properties).length > THRESHOLD;
-			if (Object.values(schema.properties).every((s) => s.nullable)) {
-				schema.nullable = true;
-			}
-			if (Object.values(schema.properties).every((s) => s.table)) {
-				schema.table = true;
-			}
+			// if (Object.values(schema.properties).every((s) => s.nullable)) {
+			// 	schema.nullable = true;
+			// }
+			// if (Object.values(schema.properties).every((s) => s.table)) {
+			// 	schema.table = true;
+			// }
 		} else if (schema.type === "array") {
 			preprocess(schema.items);
 			schema.deepness = 1 + schema.items.deepness;
@@ -128,20 +128,66 @@ function strip(schema) {
 	}
 }
 
-function generateTables(tables, name, schema) {}
+function capitalize(str) {
+	return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function generateTables(tables, rawName, schema, ref = null) {
+	const name = capitalize(rawName);
+	if (tables[name]) return;
+	const columns = [];
+	Object.entries(schema.properties || {}).forEach(([key, val]) => {
+		if (val.table === true) {
+			if (val["$ref"]) {
+			} else {
+				generateTables(tables, key, val.type === "array" ? val.items : val, name);
+			}
+			return;
+		}
+		columns.push({
+			name: key,
+			type: val.type,
+			nullable: val.nullable,
+		});
+	});
+	if (!columns.some((col) => col.name === "id")) {
+		columns.push({
+			name: "id",
+			type: "integer",
+			nullable: false,
+		});
+	}
+	if (schema.enum) {
+		columns.push({
+			name: "value",
+			type: schema.type,
+			nullable: false,
+		});
+	}
+	if (ref) {
+		columns.push({
+			name: `${ref}_id`,
+			type: "integer",
+			nullable: false,
+		});
+	}
+	tables[name] = columns;
+}
 
 function convertSchema(root) {
 	const tables = {};
 	Object.entries(root.definitions).forEach(([name, schema]) => {
-		// console.log(JSON.stringify(schema, null, 4));
 		preprocess(schema);
 		collapse(schema);
 		strip(schema);
+		// console.log(JSON.stringify(schema, null, 4));
 		generateTables(tables, name, schema);
 	});
+
+	return tables;
 }
 
-function JSONtoDB(interfacesFolderPath, name = null) {
+function InterfacesToTables(interfacesFolderPath, name = null) {
 	try {
 		execSync(
 			`typescript-json-schema --strictNullChecks true --required true --defaultNumberType "integer" --out schema.json ${interfacesFolderPath}/*.ts  *`,
@@ -153,8 +199,7 @@ function JSONtoDB(interfacesFolderPath, name = null) {
 	}
 
 	const schema = JSON.parse(fs.readFileSync("schema.json", "utf-8"));
-	convertSchema(schema);
-	return columns;
+	return convertSchema(schema);
 }
 
-console.log(JSONtoDB("interfaces"));
+console.log(InterfacesToTables("interfaces"));
