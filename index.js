@@ -21,112 +21,129 @@ const THRESHOLD = 5;
 // 	return max + 1;
 // }
 
-function preprocess(schema) {
-	if (schema.type) {
-		if (Array.isArray(schema.type)) {
-			if (schema.type.length !== 2 || !schema.type.includes("null")) {
-				console.error("Impossible case reached", schema.type);
+function preprocess(schemas) {
+	function help(schema) {
+		if (schema.type) {
+			if (Array.isArray(schema.type)) {
+				if (schema.type.length !== 2 || !schema.type.includes("null")) {
+					console.error("Impossible case reached", schema.type);
+					return;
+				}
+				schema.type = schema.type.filter((type) => type !== "null")[0];
+				schema.nullable = true;
+			}
+
+			if (schema.type === "object") {
+				Object.entries(schema.properties).forEach(([k, v]) => {
+					help(v);
+					v.nullable ??= !(schema.required ?? []).includes(k);
+				});
+
+				// schema.deepness = 1 + Math.max(...Object.values(schema.properties).map((v) => v.deepness));
+
+				schema.table = Object.keys(schema.properties).length > THRESHOLD;
+				// if (Object.values(schema.properties).every((s) => s.nullable)) {
+				// 	schema.nullable = true;
+				// }
+				// if (Object.values(schema.properties).every((s) => s.table)) {
+				// 	schema.table = true;
+				// }
+			} else if (schema.type === "array") {
+				help(schema.items);
+				// schema.deepness = 1 + schema.items.deepness;
+				schema.table = true;
+			} else if (schema.type === "string") {
+				if (schema.format === "date-time") {
+					schema.type = "integer";
+					delete schema.format;
+				}
+				// schema.deepness = 0;
+				schema.table = false;
+			} else {
+				// schema.deepness = 0;
+				schema.table = false;
+			}
+		} else if (
+			Array.isArray(schema.anyOf) &&
+			schema.anyOf.length === 2 &&
+			schema.anyOf.some((s) => s && s.type === "null" && Object.keys(s).length === 1)
+		) {
+			const nonNullRaw = schema.anyOf.find((s) => !(s.type === "null" && Object.keys(s).length === 1));
+			if (!nonNullRaw) {
+				console.error("Impossible case reached", schema.anyOf);
 				return;
 			}
-			schema.type = schema.type.filter((type) => type !== "null")[0];
+			const nonNull = JSON.parse(JSON.stringify(nonNullRaw));
+			Object.keys(schema).forEach((key) => delete schema[key]);
+			Object.assign(schema, nonNull);
 			schema.nullable = true;
-		}
-
-		if (schema.type === "object") {
-			schema.deepness =
-				1 +
-				Math.max(
-					...Object.entries(schema.properties).map(([k, v]) => {
-						preprocess(v);
-						v.nullable ??= !(schema.required ?? []).includes(k);
-						// console.log(k, v);
-						return v.deepness;
-					})
-				);
-			schema.table = Object.keys(schema.properties).length > THRESHOLD;
-			// if (Object.values(schema.properties).every((s) => s.nullable)) {
-			// 	schema.nullable = true;
-			// }
-			// if (Object.values(schema.properties).every((s) => s.table)) {
-			// 	schema.table = true;
-			// }
-		} else if (schema.type === "array") {
-			preprocess(schema.items);
-			schema.deepness = 1 + schema.items.deepness;
+			help(schema);
+		} else if (Object.keys(schema).length === 1 && schema["$ref"]) {
 			schema.table = true;
-		} else if (schema.type === "string") {
-			if (schema.format === "date-time") {
-				schema.type = "integer";
-				delete schema.format;
-			}
-			schema.deepness = 0;
-			schema.table = false;
+			// schema.deepness = 0;
 		} else {
-			schema.deepness = 0;
-			schema.table = false;
-		}
-	} else if (
-		Array.isArray(schema.anyOf) &&
-		schema.anyOf.length === 2 &&
-		schema.anyOf.some((s) => s && s.type === "null" && Object.keys(s).length === 1)
-	) {
-		const nonNullRaw = schema.anyOf.find((s) => !(s.type === "null" && Object.keys(s).length === 1));
-		if (!nonNullRaw) {
-			console.error("Impossible case reached", schema.anyOf);
+			console.error("Impossible case reached", schema);
 			return;
 		}
-		const nonNull = JSON.parse(JSON.stringify(nonNullRaw));
-		Object.keys(schema).forEach((key) => delete schema[key]);
-		Object.assign(schema, nonNull);
-		schema.nullable = true;
-		preprocess(schema);
-	} else if (Object.keys(schema).length === 1 && schema["$ref"]) {
-		schema.table = true;
-		schema.deepness = 0;
-	} else {
-		console.error("Impossible case reached", schema);
-		return;
 	}
 
-	delete schema.required;
-}
+	function collapse(schema) {
+		function collapseRecursive(obj, propagate) {
+			let result = {};
 
-function collapse(schema) {
-	function collapseRecursive(obj, propagate) {
-		let result = {};
+			Object.entries(obj.properties || {}).forEach(([key, val]) => {
+				if (val.type === "object" && val.properties && propagate && !val.table) {
+					let nested = collapseRecursive(val, true);
+					Object.entries(nested).forEach(([nestedKey, nestedVal]) => {
+						result[`${key}.${nestedKey}`] = nestedVal;
+					});
+				} else if (val.type === "array" && val.items && val.items.type === "object" && val.items.properties) {
+					collapseRecursive(val.items, false);
+					result[key] = val;
+				} else if (val.type === "object" && val.properties && val.table) {
+					collapseRecursive(val, false);
+					result[key] = val;
+				} else {
+					result[key] = val;
+				}
+			});
 
-		Object.entries(obj.properties || {}).forEach(([key, val]) => {
-			if (val.type === "object" && val.properties && propagate && !val.table) {
-				let nested = collapseRecursive(val, true);
-				Object.entries(nested).forEach(([nestedKey, nestedVal]) => {
-					result[`${key}_${nestedKey}`] = nestedVal;
-				});
-			} else if (val.type === "array" && val.items && val.items.type === "object" && val.items.properties) {
-				collapseRecursive(val.items, false);
-				result[key] = val;
-			} else if (val.type === "object" && val.properties && val.table) {
-				collapseRecursive(val, false);
-				result[key] = val;
-			} else {
-				result[key] = val;
-			}
-		});
+			obj.properties = result;
+			return result;
+		}
 
-		obj.properties = result;
-		return result;
+		collapseRecursive(schema, [], true);
 	}
 
-	collapseRecursive(schema, [], true);
+	Object.entries(schemas.definitions).forEach(([name, schema]) => {
+		help(schema);
+		collapse(schema);
+	});
+
+	delete schemas["$schema"];
+
+	function flatten(o, key) {
+		if (o[key] && typeof o[key] === "object") {
+			const flattened = { ...o, ...o[key] };
+			delete flattened[key];
+			return flattened;
+		}
+		return o;
+	}
+
+	return flatten(schemas, "definitions");
 }
 
-function strip(schema) {
-	const stop = schema.deepness === 0;
-	delete schema.deepness;
-	if (stop) return;
-	for (const val of Object.values(schema)) {
-		if (typeof val === "object" && val !== null) strip(val);
-	}
-}
+// function strip(schema) {
+// 	const stop = schema.deepness === 0;
+// 	delete schema.deepness;
+// 	if (stop) return;
+// 	for (const val of Object.values(schema)) {
+// 		if (typeof val === "object" && val !== null) strip(val);
+// 	}
+
+// 	delete schema.required;
+// }
 
 function capitalize(str) {
 	return str.charAt(0).toUpperCase() + str.slice(1);
@@ -139,7 +156,7 @@ function decapitalize(str) {
 function generateTables(tables, name, schema, ref = null) {
 	const toAdd = [];
 	if (tables[capitalize(name)]) return;
-	const columns = [];
+	const columns = {};
 	Object.entries(schema.properties || {}).forEach(([key, val]) => {
 		if (val.table === true) {
 			if (val["$ref"]) {
@@ -149,57 +166,55 @@ function generateTables(tables, name, schema, ref = null) {
 						console.log("Impossible case reached", refName);
 						return;
 					}
-					if (tables[refName].some((col) => col.name === "key")) return;
-					tables[refName].push({
-						name: "key",
+					if (Object.keys(tables[refName]).some((colName) => colName === "key")) return;
+					tables[refName]["key"] = {
 						type: "string",
 						nullable: false,
-					});
+					};
 				});
 			} else {
 				toAdd.push(...generateTables(tables, key, val.type === "array" ? val.items : val, name));
 			}
-			return;
+		} else if (val.enum) {
+			columns[key] = {
+				type: "enum",
+				nullable: val.nullable,
+				values: val.enum,
+			};
+		} else {
+			columns[key] = {
+				type: val.type,
+				nullable: val.nullable,
+			};
 		}
-		columns.push({
-			name: key,
-			type: val.type,
-			nullable: val.nullable,
-		});
 	});
-	if (!columns.some((col) => col.name === "id")) {
-		columns.push({
-			name: "id",
-			type: "integer",
+	if (!Object.keys(columns).some((colName) => colName === "id")) {
+		columns["id"] = {
+			type: "generated",
 			nullable: false,
-		});
+		};
 	}
 	if (schema.enum) {
-		columns.push({
-			name: "value",
-			type: schema.type,
+		columns["value"] = {
+			type: "enum",
 			nullable: false,
-		});
+			values: schema.enum,
+		};
 	}
 	if (ref) {
-		columns.push({
-			name: `${ref}_id`,
-			type: "integer",
+		columns[`${ref}.id`] = {
+			type: "ref",
 			nullable: false,
-		});
+		};
 	}
 	tables[capitalize(name)] = columns;
 	return toAdd;
 }
 
-function convertSchema(root) {
+function convertSchemas(schemas) {
 	const toAdd = [];
 	const tables = {};
-	Object.entries(root.definitions).forEach(([name, schema]) => {
-		preprocess(schema);
-		collapse(schema);
-		strip(schema);
-		console.log(JSON.stringify(schema, null, 4));
+	Object.entries(schemas).forEach(([name, schema]) => {
 		toAdd.push(...generateTables(tables, decapitalize(name), schema));
 	});
 	toAdd.forEach((fn) => {
@@ -208,10 +223,10 @@ function convertSchema(root) {
 	return tables;
 }
 
-function InterfacesToTables(interfacesFolderPath, name = null) {
+function InterfacesToTables(interfacesFolderPath) {
 	try {
 		execSync(
-			`typescript-json-schema --strictNullChecks true --required true --defaultNumberType "integer" --out schema.json ${interfacesFolderPath}/*.ts  *`,
+			`typescript-json-schema --strictNullChecks true --required true --defaultNumberType "integer" --out schemas.json ${interfacesFolderPath}/*.ts  *`,
 			{ stdio: "inherit" }
 		);
 	} catch (error) {
@@ -219,8 +234,20 @@ function InterfacesToTables(interfacesFolderPath, name = null) {
 		return;
 	}
 
-	const schema = JSON.parse(fs.readFileSync("schema.json", "utf-8"));
-	return convertSchema(schema);
+	let schemas = JSON.parse(fs.readFileSync("schemas.json", "utf-8"));
+	schemas = preprocess(schemas);
+
+	fs.writeFileSync("schemas.json", JSON.stringify(schemas, null, 4));
+
+	console.log("You can now manually edit 'schema.json' if needed. Press Enter to continue...");
+	require("readline-sync").question();
+
+	schemas = JSON.parse(fs.readFileSync("schemas.json", "utf-8"));
+
+	let tables = convertSchemas(schemas);
+	fs.writeFileSync("tables.json", JSON.stringify(tables, null, 4));
+
+	console.log("You can now manually edit 'tables.json' if needed.");
 }
 
-console.log(InterfacesToTables("interfaces"));
+InterfacesToTables("interfaces");

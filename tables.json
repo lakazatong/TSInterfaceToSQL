@@ -1,0 +1,292 @@
+{
+    "Statistics": {
+        "count_100": {
+            "type": "integer",
+            "nullable": false
+        },
+        "count_300": {
+            "type": "integer",
+            "nullable": false
+        },
+        "count_50": {
+            "type": "integer",
+            "nullable": false
+        },
+        "count_miss": {
+            "type": "integer",
+            "nullable": false
+        },
+        "global_rank": {
+            "type": "integer",
+            "nullable": true
+        },
+        "global_rank_exp": {
+            "type": "integer",
+            "nullable": true
+        },
+        "grade_counts.a": {
+            "type": "integer",
+            "nullable": false
+        },
+        "grade_counts.s": {
+            "type": "integer",
+            "nullable": false
+        },
+        "grade_counts.sh": {
+            "type": "integer",
+            "nullable": false
+        },
+        "grade_counts.ss": {
+            "type": "integer",
+            "nullable": false
+        },
+        "grade_counts.ssh": {
+            "type": "integer",
+            "nullable": false
+        },
+        "hit_accuracy": {
+            "type": "float",
+            "nullable": false
+        },
+        "is_ranked": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "level.current": {
+            "type": "integer",
+            "nullable": false
+        },
+        "level.progress": {
+            "type": "integer",
+            "nullable": false
+        },
+        "maximum_combo": {
+            "type": "integer",
+            "nullable": false
+        },
+        "play_count": {
+            "type": "integer",
+            "nullable": false
+        },
+        "play_time": {
+            "type": "integer",
+            "nullable": true
+        },
+        "pp": {
+            "type": "float",
+            "nullable": true
+        },
+        "pp_exp": {
+            "type": "integer",
+            "nullable": true
+        },
+        "ranked_score": {
+            "type": "integer",
+            "nullable": false
+        },
+        "replays_watched_by_others": {
+            "type": "integer",
+            "nullable": false
+        },
+        "total_hits": {
+            "type": "integer",
+            "nullable": false
+        },
+        "total_score": {
+            "type": "integer",
+            "nullable": false
+        },
+        "id": {
+            "type": "generated",
+            "nullable": false
+        },
+        "key": {
+            "type": "string",
+            "nullable": false
+        }
+    },
+    "Playmodes": {
+        "id": {
+            "type": "generated",
+            "nullable": false
+        },
+        "value": {
+            "type": "enum",
+            "nullable": false,
+            "values": [
+                "fruits",
+                "mania",
+                "osu",
+                "taiko"
+            ]
+        },
+        "groups.id": {
+            "type": "ref",
+            "nullable": false
+        }
+    },
+    "Groups": {
+        "colour": {
+            "type": "string",
+            "nullable": true
+        },
+        "has_listing": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "has_playmodes": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "id": {
+            "type": "integer",
+            "nullable": false
+        },
+        "identifier": {
+            "type": "string",
+            "nullable": false
+        },
+        "is_probationary": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "name": {
+            "type": "string",
+            "nullable": false
+        },
+        "short_name": {
+            "type": "string",
+            "nullable": false
+        },
+        "user.id": {
+            "type": "ref",
+            "nullable": false
+        }
+    },
+    "Variants": {
+        "country_rank": {
+            "type": "integer",
+            "nullable": true
+        },
+        "global_rank": {
+            "type": "integer",
+            "nullable": true
+        },
+        "mode": {
+            "type": "enum",
+            "nullable": false,
+            "values": [
+                "fruits",
+                "mania",
+                "osu",
+                "taiko"
+            ]
+        },
+        "pp": {
+            "type": "float",
+            "nullable": false
+        },
+        "variant": {
+            "type": "string",
+            "nullable": false
+        },
+        "id": {
+            "type": "generated",
+            "nullable": false
+        },
+        "user.id": {
+            "type": "ref",
+            "nullable": false
+        }
+    },
+    "User": {
+        "avatar_url": {
+            "type": "string",
+            "nullable": false
+        },
+        "country.code": {
+            "type": "string",
+            "nullable": false
+        },
+        "country.name": {
+            "type": "string",
+            "nullable": false
+        },
+        "country_code": {
+            "type": "string",
+            "nullable": false
+        },
+        "cover.custom_url": {
+            "type": "string",
+            "nullable": true
+        },
+        "cover.id": {
+            "type": "integer",
+            "nullable": true
+        },
+        "cover.url": {
+            "type": "string",
+            "nullable": false
+        },
+        "default_group": {
+            "type": "string",
+            "nullable": false
+        },
+        "id": {
+            "type": "integer",
+            "nullable": false
+        },
+        "is_active": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "is_bot": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "is_deleted": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "is_online": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "is_supporter": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "last_visit": {
+            "type": "integer",
+            "nullable": true
+        },
+        "pm_friends_only": {
+            "type": "boolean",
+            "nullable": false
+        },
+        "profile_colour": {
+            "type": "string",
+            "nullable": true
+        },
+        "team.flag_url": {
+            "type": "string",
+            "nullable": false
+        },
+        "team.id": {
+            "type": "integer",
+            "nullable": false
+        },
+        "team.name": {
+            "type": "string",
+            "nullable": false
+        },
+        "team.short_name": {
+            "type": "string",
+            "nullable": false
+        },
+        "username": {
+            "type": "string",
+            "nullable": false
+        }
+    }
+}
