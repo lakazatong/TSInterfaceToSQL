@@ -306,23 +306,27 @@
 				"table": false
 			},
 			"statistics_rulesets.fruits": {
-				"$ref": "#/definitions/Statistics",
+				"type": "ref",
 				"table": true,
+				"ref": "Statistics",
 				"nullable": true
 			},
 			"statistics_rulesets.mania": {
-				"$ref": "#/definitions/Statistics",
+				"type": "ref",
 				"table": true,
+				"ref": "Statistics",
 				"nullable": true
 			},
 			"statistics_rulesets.osu": {
-				"$ref": "#/definitions/Statistics",
+				"type": "ref",
 				"table": true,
+				"ref": "Statistics",
 				"nullable": true
 			},
 			"statistics_rulesets.taiko": {
-				"$ref": "#/definitions/Statistics",
+				"type": "ref",
 				"table": true,
+				"ref": "Statistics",
 				"nullable": true
 			},
 			"team.flag_url": {

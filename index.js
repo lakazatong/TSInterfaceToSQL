@@ -79,7 +79,10 @@ function preprocess(schemas) {
 			schema.nullable = true;
 			help(schema);
 		} else if (Object.keys(schema).length === 1 && schema["$ref"]) {
+			schema.type = "ref";
 			schema.table = true;
+			schema.ref = schema["$ref"].split("/").pop();
+			delete schema["$ref"];
 			// schema.deepness = 0;
 		} else {
 			console.error("Impossible case reached", schema);
@@ -159,15 +162,14 @@ function generateTables(tables, name, schema, ref = null) {
 	const columns = {};
 	Object.entries(schema.properties || {}).forEach(([key, val]) => {
 		if (val.table === true) {
-			if (val["$ref"]) {
+			if (val.type === "ref") {
 				toAdd.push(() => {
-					const refName = val["$ref"].split("/").pop();
-					if (!tables[refName]) {
-						console.log("Impossible case reached", refName);
+					if (!tables[val.ref]) {
+						console.log("Impossible case reached", val.ref);
 						return;
 					}
-					if (Object.keys(tables[refName]).some((colName) => colName === "key")) return;
-					tables[refName]["key"] = {
+					if (Object.keys(tables[val.ref]).some((colName) => colName === "key")) return;
+					tables[val.ref]["key"] = {
 						type: "string",
 						nullable: false,
 					};
